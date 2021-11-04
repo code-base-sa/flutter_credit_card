@@ -10,9 +10,8 @@ import 'glassmorphism_config.dart';
 
 const Map<CardType, String> CardTypeIconAsset = <CardType, String>{
   CardType.visa: 'icons/visa.png',
-  CardType.americanExpress: 'icons/amex.png',
   CardType.mastercard: 'icons/mastercard.png',
-  CardType.discover: 'icons/discover.png',
+  CardType.mada: 'icons/mada.png'
 };
 
 class CreditCardWidget extends StatefulWidget {
@@ -79,8 +78,6 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
   late Gradient backgroundGradientColor;
   late bool isFrontVisible = true;
   late bool isGestureUpdate = false;
-
-  bool isAmex = false;
 
   @override
   void initState() {
@@ -388,11 +385,7 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
                       child: Padding(
                         padding: const EdgeInsets.all(5),
                         child: Text(
-                          widget.cvvCode.isEmpty
-                              ? isAmex
-                                  ? 'XXXX'
-                                  : 'XXX'
-                              : cvv,
+                          widget.cvvCode.isEmpty ? 'XXX' : cvv,
                           maxLines: 1,
                           style: widget.textStyle ?? defaultTextStyle,
                         ),
@@ -448,87 +441,18 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
         : child;
   }
 
-  /// Credit Card prefix patterns as of March 2019
-  /// A [List<String>] represents a range.
-  /// i.e. ['51', '55'] represents the range of cards starting with '51' to those starting with '55'
-  Map<CardType, Set<List<String>>> cardNumPatterns =
-      <CardType, Set<List<String>>>{
-    CardType.visa: <List<String>>{
-      <String>['4'],
-    },
-    CardType.americanExpress: <List<String>>{
-      <String>['34'],
-      <String>['37'],
-    },
-    CardType.discover: <List<String>>{
-      <String>['6011'],
-      <String>['622126', '622925'],
-      <String>['644', '649'],
-      <String>['65']
-    },
-    CardType.mastercard: <List<String>>{
-      <String>['51', '55'],
-      <String>['2221', '2229'],
-      <String>['223', '229'],
-      <String>['23', '26'],
-      <String>['270', '271'],
-      <String>['2720'],
-    },
-  };
-
   /// This function determines the Credit Card type based on the cardPatterns
   /// and returns it.
   CardType detectCCType(String cardNumber) {
-    //Default card type is other
-    CardType cardType = CardType.otherBrand;
-
-    if (cardNumber.isEmpty) {
-      return cardType;
-    }
-
-    cardNumPatterns.forEach(
-      (CardType type, Set<List<String>> patterns) {
-        for (List<String> patternRange in patterns) {
-          // Remove any spaces
-          String ccPatternStr =
-              cardNumber.replaceAll(RegExp(r'\s+\b|\b\s'), '');
-          final int rangeLen = patternRange[0].length;
-          // Trim the Credit Card number string to match the pattern prefix length
-          if (rangeLen < cardNumber.length) {
-            ccPatternStr = ccPatternStr.substring(0, rangeLen);
-          }
-
-          if (patternRange.length > 1) {
-            // Convert the prefix range into numbers then make sure the
-            // Credit Card num is in the pattern range.
-            // Because Strings don't have '>=' type operators
-            final int ccPrefixAsInt = int.parse(ccPatternStr);
-            final int startPatternPrefixAsInt = int.parse(patternRange[0]);
-            final int endPatternPrefixAsInt = int.parse(patternRange[1]);
-            if (ccPrefixAsInt >= startPatternPrefixAsInt &&
-                ccPrefixAsInt <= endPatternPrefixAsInt) {
-              // Found a match
-              cardType = type;
-              break;
-            }
-          } else {
-            // Just compare the single pattern prefix with the Credit Card prefix
-            if (ccPatternStr == patternRange[0]) {
-              // Found a match
-              cardType = type;
-              break;
-            }
-          }
-        }
-      },
-    );
+    final CardType cardType = cardNumber.detectBrand;
 
     return cardType;
   }
 
   Widget getCardTypeImage(CardType? cardType) {
-    final List<CustomCardTypeIcon> customCardTypeIcon = getCustomCardTypeIcon(cardType!);
-    if(customCardTypeIcon.isNotEmpty){
+    final List<CustomCardTypeIcon> customCardTypeIcon =
+        getCustomCardTypeIcon(cardType!);
+    if (customCardTypeIcon.isNotEmpty) {
       return customCardTypeIcon.first.cardImage;
     } else {
       return Image.asset(
@@ -540,15 +464,15 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
     }
   }
 
-    // This method returns the icon for the visa card type if found
-    // else will return the empty container
+  // This method returns the icon for the visa card type if found
+  // else will return the empty container
   Widget getCardTypeIcon(String cardNumber) {
     Widget icon;
     final CardType ccType = detectCCType(cardNumber);
-    final List<CustomCardTypeIcon> customCardTypeIcon = getCustomCardTypeIcon(ccType);
+    final List<CustomCardTypeIcon> customCardTypeIcon =
+        getCustomCardTypeIcon(ccType);
     if (customCardTypeIcon.isNotEmpty) {
       icon = customCardTypeIcon.first.cardImage;
-      isAmex = ccType == CardType.americanExpress;
     } else {
       switch (ccType) {
         case CardType.visa:
@@ -558,17 +482,6 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
             width: 48,
             package: 'flutter_credit_card',
           );
-          isAmex = false;
-          break;
-
-        case CardType.americanExpress:
-          icon = Image.asset(
-            CardTypeIconAsset[ccType]!,
-            height: 48,
-            width: 48,
-            package: 'flutter_credit_card',
-          );
-          isAmex = true;
           break;
 
         case CardType.mastercard:
@@ -578,17 +491,14 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
             width: 48,
             package: 'flutter_credit_card',
           );
-          isAmex = false;
           break;
-
-        case CardType.discover:
+        case CardType.mada:
           icon = Image.asset(
             CardTypeIconAsset[ccType]!,
             height: 48,
             width: 48,
             package: 'flutter_credit_card',
           );
-          isAmex = false;
           break;
 
         default:
@@ -596,7 +506,6 @@ class _CreditCardWidgetState extends State<CreditCardWidget>
             height: 48,
             width: 48,
           );
-          isAmex = false;
           break;
       }
     }
@@ -731,10 +640,35 @@ class MaskedTextController extends TextEditingController {
   }
 }
 
-enum CardType {
-  otherBrand,
-  mastercard,
-  visa,
-  americanExpress,
-  discover,
+enum CardType { otherBrand, mastercard, visa, mada }
+
+extension DetectBrand on String {
+  /// Detects a card brand from its number.
+  ///
+  /// Supports VISA, MasterCard, Mada
+  CardType get detectBrand {
+    final String cleanNumber = replaceAll(' ', '');
+
+    final bool _isMADA = _madaRegExpM.hasMatch(cleanNumber) ||
+        _madaRegExpV.hasMatch(cleanNumber);
+    final bool _isVISA = _visaRegExp.hasMatch(cleanNumber);
+    final bool _isMASTERCARD = _mastercardRegExp.hasMatch(cleanNumber);
+
+    if (_isMADA) {
+      return CardType.mada;
+    } else if (_isVISA) {
+      return CardType.visa;
+    } else if (_isMASTERCARD) {
+      return CardType.mastercard;
+    } else {
+      return CardType.otherBrand;
+    }
+  }
 }
+
+RegExp _visaRegExp = RegExp(r'^4[0-9]{12}(?:[0-9]{3})?$');
+RegExp _mastercardRegExp = RegExp(r'^5[1-5][0-9]{5,}$');
+RegExp _madaRegExpV = RegExp(
+    r'4(0(0861|1757|7(197|395)|9201)|1(0685|7633|9593)|2(281(7|8|9)|8(331|67(1|2|3)))|3(1361|2328|4107|9954)|4(0(533|647|795)|5564|6(393|404|672))|5(5(036|708)|7865|8456)|6(2220|854(0|1|2|3))|8(301(0|1|2)|4783|609(4|5|6)|931(7|8|9))|93428)');
+RegExp _madaRegExpM = RegExp(
+    r'5(0(4300|8160)|13213|2(1076|4(130|514)|9(415|741))|3(0906|1095|2013|5(825|989)|6023|7767|9931)|4(3(085|357)|9760)|5(4180|7606|8848)|8(5265|8(8(4(5|6|7|8|9)|5(0|1))|98(2|3))|9(005|206)))|6(0(4906|5141)|36120)|9682(0(1|2|3|4|5|6|7|8|9)|1(0|1))');
